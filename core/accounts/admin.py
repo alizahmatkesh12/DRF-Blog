@@ -6,12 +6,12 @@ from .models import User, Profile
 class UserAdmin(UserAdmin):
     model = User
     search_fields = ("email",)
-    list_filter = ("email", "is_active", "is_staff")
-    list_display = ("email", "is_active", "is_staff")
+    list_display = ("email", "is_superuser", "is_active", "is_verified", "created_date")
+    list_filter = ("email", "is_superuser", "is_active", "is_verified")
     ordering = ("-created_date",)
     fieldsets = (
-        ("Authentication", {"fields": ("email",)}),
-        ("Permissions", {"fields": ("is_staff", "is_active")}),
+        ("Authentication", {"fields": ("email", "password",)}),
+        ("Permissions", {"fields": ("is_staff", "is_verified", "is_active", "is_superuser")}),
         (
             "Group Permissions",
             {
@@ -21,7 +21,7 @@ class UserAdmin(UserAdmin):
                 )
             },
         ),
-        ("Important dates", {"fields": ("last_login",)}),
+        ("Important Dates", {"fields": ("last_login",)}),
     )
     add_fieldsets = (
         (
@@ -33,7 +33,9 @@ class UserAdmin(UserAdmin):
                     "password1",
                     "password2",
                     "is_active",
+                    "is_verified",
                     "is_staff",
+                    "is_superuser",
                 ),
             },
         ),

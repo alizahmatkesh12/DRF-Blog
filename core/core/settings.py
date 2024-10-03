@@ -11,10 +11,13 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
-
+from datetime import timedelta
+from django.urls import reverse_lazy
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Successful login redirection configuration (in case next parameter is not specified)
+LOGIN_REDIRECT_URL = reverse_lazy("blog:index")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -25,7 +28,7 @@ SECRET_KEY = 'django-insecure-2u+&n^9a6)2=v9(xt=bwqg1!6v3ip=n*6pd90t&u9ehfe+%hvs
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -37,8 +40,14 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'rest_framework',
+    #local Apps
     'accounts',
+    #third partty
+    'rest_framework',
+    'rest_framework.authtoken',
+    'rest_framework_simplejwt',
+    'mail_templated',     #documentation https://django-mail-templated.readthedocs.io/
+    'drf_yasg',
 ]
 
 MIDDLEWARE = [
@@ -56,7 +65,7 @@ ROOT_URLCONF = 'core.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -134,11 +143,38 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # User Manager Configuration
 AUTH_USER_MODEL = "accounts.User"
-AUTH_PROFILE_MODULE = "accounts.User"
 
 # rest framework settings
 REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.authentication.BasicAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
+        "rest_framework.authentication.TokenAuthentication",
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.AllowAny',  # Change as necessary
+    ),
 }
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=10),
+}
+
+# # SMTP service configuration for sending emails
+# EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+# EMAIL_HOST = "smtp.gmail.com"  # Docker compose service name (instead of 'localhost')
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+# EMAIL_HOST_USER = "alizahmaktesh0206@gmial.com"
+# EMAIL_HOST_PASSWORD = "Alizm1241"
+
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = '127.0.0.1'
+EMAIL_PORT = 25
+EMAIL_USE_TLS = False  # اگر از TLS استفاده نمی‌کنید
+EMAIL_USE_SSL = False  # اگر از SSL استفاده نمی‌کنید
+EMAIL_HOST_USER = ''  # اگر نیاز به نام کاربری نیست، خالی بگذارید
+EMAIL_HOST_PASSWORD = ''  # اگر نیاز به رمز عبور نیست، خالی بگذارید
+DEFAULT_FROM_EMAIL = 'you@example.com'  # آدرس ایمیل پیش‌فرض
