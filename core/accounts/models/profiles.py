@@ -1,34 +1,10 @@
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
-from django.utils.translation import gettext_lazy as _
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from .managers import UserManager
 
+from .users import User
+import uuid
 
-
-class User(AbstractBaseUser, PermissionsMixin):
-    
-    email = models.EmailField(_("email address"), unique=True)
-    is_superuser = models.BooleanField(default=False)
-    is_staff = models.BooleanField(default=False)
-    is_active = models.BooleanField(default=True)
-    is_verified = models.BooleanField(default=False)
-    created_date = models.DateTimeField(auto_now_add=True)
-    updated_date = models.DateTimeField(auto_now=True)
-    
-    USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = []
-    
-    objects = UserManager()
-    
-    
-    def __str__(self):
-        return self.email
-
-    @property
-    def fullname(self):
-        return f"{self.first_name} {self.last_name}"
 
 
 class Profile(models.Model):
@@ -37,6 +13,7 @@ class Profile(models.Model):
     """
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+    username = models.CharField(max_length=250, unique=True)
     first_name = models.CharField(max_length=250)
     last_name = models.CharField(max_length=250)
     image = models.ImageField(blank=True, null=True)
@@ -46,6 +23,13 @@ class Profile(models.Model):
 
     def __str__(self):
         return self.user.email
+    
+    def save(self, *args, **kwargs):
+        if not self.username:
+            self.username = self.user.email.split("@")[0]
+            if Profile.objects.filter(username=self.username).exists():
+                self.username = f"{self.username}-{uuid.uuid4().hex[:8]}"
+        super().save(*args, **kwargs)
 
 
 @receiver(post_save, sender=User)

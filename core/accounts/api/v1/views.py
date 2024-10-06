@@ -23,7 +23,7 @@ from .serializers import (
 )
 
 from accounts.models import  Profile
-# from .utils import TokenHandler, EmailSender
+from .utils import TokenHandler, EmailSender
 
 User = get_user_model()
 from ..utils import EmailThread
@@ -31,46 +31,43 @@ from mail_templated import EmailMessage
 
 class UserRegistration(GenericAPIView):
     """Creates new user with the given info and credentials"""
-
     serializer_class = RegistrationSerializer
 
+    def post(self, request):
+        """Create a new user from provided data"""
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        email = serializer.validated_data["email"]
+        data = {"email": email}
+        user_obj = get_object_or_404(User, email=email)
+        EmailSender.send_activation_email(request, user_obj)
+        # Prevention of receiving hashed password in the serializer.data
+        return Response(data, status=status.HTTP_201_CREATED)
     # def post(self, request, *args, **kwargs):
-    #     """
-    #     Register class
-    #     """
-
-    #     serializer = RegistrationSerializer(data=request.data)
-    #     serializer.is_valid(raise_exception=True)
-    #     serializer.save()
-    #     email = serializer.validated_data["email"]
-    #     data = {"email": email}
-    #     user_obj = get_object_or_404(User, email=email)
-    #     EmailSender.send_activation_email(request, user_obj)
-    #     return Response(data, status=status.HTTP_201_CREATED)
-    def post(self, request, *args, **kwargs):
-            serializer = RegistrationSerializer(data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                email = serializer.validated_data["email"]
-                data = {
-                    "detail": "We sent an email to you for verification.",
-                    "email": email,
-                }
-                user_obj = get_object_or_404(User, email=email)
-                token = self.get_tokens_for_user(user_obj)
-                email_obj = EmailMessage(
-                    "email/activation_email.tpl",
-                    {"token": token},
-                    "admin@admin.com",
-                    to=[email],
-                )
-                # multi threading
-                EmailThread(email_obj).start()
-                return Response(data, status.HTTP_201_CREATED)
+    #         serializer = RegistrationSerializer(data=request.data)
+    #         if serializer.is_valid():
+    #             serializer.save()
+    #             email = serializer.validated_data["email"]
+    #             data = {
+    #                 "detail": "We sent an email to you for verification.",
+    #                 "email": email,
+    #             }
+    #             user_obj = get_object_or_404(User, email=email)
+    #             token = self.get_tokens_for_user(user_obj)
+    #             email_obj = EmailMessage(
+    #                 "email/activation_email.tpl",
+    #                 {"token": token},
+    #                 "admin@admin.com",
+    #                 to=[email],
+    #             )
+    #             # multi threading
+    #             EmailThread(email_obj).start()
+    #             return Response(data, status.HTTP_201_CREATED)
             
-    def get_tokens_for_user(self, user):
-        refresh = RefreshToken.for_user(user)
-        return str(refresh.access_token)
+    # def get_tokens_for_user(self, user):
+    #     refresh = RefreshToken.for_user(user)
+    #     return str(refresh.access_token)
 
 class ChangePasswordAPIView(GenericAPIView):
     """
@@ -147,19 +144,17 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         
 class ActivationAPIView(APIView):
     """Decoding JWT authentication token and activating user account"""
-    
+
     def get(self, request, token, *args, **kwargs):
         _, user_id = TokenHandler.Validate_jwt_access_token(token)
-        user_obj = User.objects.get(id=user_id)
+        user_obj = User.objects.get(pk=user_id)
         if user_obj.is_verified:
             return Response(
-                {"details": "Your account has already been verified and is active."}
+                {"details": "Your account has already been verified and is active"}
             )
         user_obj.is_verified = True
         user_obj.save()
-        return Response(
-            {"details": "Your account has been verified and activated."}
-            )
+        return Response({"details": "Your account has been verified and activated"})
 
 class ActivationResendAPIView(GenericAPIView):
     """Resending JWT authentication token for user activation"""
@@ -179,8 +174,9 @@ class ActivationResendAPIView(GenericAPIView):
         
 class ResetPasswordAPIView(GenericAPIView):
     """Sending a reset password link to the user by email"""
+
     serializer_class = ResetPasswordSerializer
-    
+
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -189,29 +185,18 @@ class ResetPasswordAPIView(GenericAPIView):
             EmailSender.send_resetpassword_email(request, user_obj)
         return Response(
             {
-                "details": "reset password link was sent to you..."
+                "details": "reset password link was sent to you."
+                # if you didn't receive it, check your email address or spam
             }
         )
         
 
-class ResetPasswordConfirmAPIView(GenericAPIView):
-    """Validating JWT token"""
-    
-    def get(self, request, token, *args, **kwargs):
-        valid_token, _ = TokenHandler.Validate_jwt_access_token(token)
-        data = {
-            "token": token,
-            "valid_token": valid_token,
-        }
-        # token can also be saved in the session to be used
-        # then check the valid_token and redirect user to the the password reset form
-        return Response(data, status=status.HTTP_200_OK)
 
-class ResetPasswordValidateAPIView(GenericAPIView):
+class ResetPasswordConfirmAPIView(GenericAPIView):
     """Resetting user's password"""
-    
+
     serializer_class = ResetPasswordConfirmSerializer
-    
+
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -221,9 +206,23 @@ class ResetPasswordValidateAPIView(GenericAPIView):
         user_obj.set_password(serializer.validated_data.get("password"))
         user_obj.save()
         return Response(
-            {"detals": "Reset password was successful"},
+            {"details": "Reset password was successful"},
             status=status.HTTP_200_OK,
         )
+        
+        
+class ResetPasswordValidateAPIView(APIView):
+    """Validating JWT token"""
+
+    def get(self, request, token, *args, **kwargs):
+        valid_token, _ = TokenHandler.Validate_jwt_access_token(token)
+        data = {
+            "token": token,
+            "valid_token": valid_token,
+        }
+        # token can also be saved in the session to be used
+        # then check the valid_token and redirect user to the the password reset form
+        return Response(data, status=status.HTTP_200_OK)
         
         
 class ProfileApiView(RetrieveUpdateAPIView):

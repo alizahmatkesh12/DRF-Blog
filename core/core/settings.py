@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     #local Apps
     'accounts',
+    'blog',
     #third partty
     'rest_framework',
     'rest_framework.authtoken',
@@ -170,11 +171,10 @@ SIMPLE_JWT = {
 # EMAIL_HOST_PASSWORD = "Alizm1241"
 
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = '127.0.0.1'
+# SMTP service configuration for sending emails
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "127.0.0.1"  # Docker compose service name (instead of 'localhost')
 EMAIL_PORT = 25
-EMAIL_USE_TLS = False  # اگر از TLS استفاده نمی‌کنید
-EMAIL_USE_SSL = False  # اگر از SSL استفاده نمی‌کنید
-EMAIL_HOST_USER = ''  # اگر نیاز به نام کاربری نیست، خالی بگذارید
-EMAIL_HOST_PASSWORD = ''  # اگر نیاز به رمز عبور نیست، خالی بگذارید
-DEFAULT_FROM_EMAIL = 'you@example.com'  # آدرس ایمیل پیش‌فرض
+EMAIL_USE_TLS = False
+EMAIL_HOST_USER = ""
+EMAIL_HOST_PASSWORD = ""

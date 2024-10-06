@@ -1,7 +1,6 @@
 from django.conf import settings
 from rest_framework import serializers
 from accounts.models import  Profile
-from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.password_validation import validate_password
 from django.core import exceptions
@@ -9,7 +8,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth import authenticate
 import jwt
 
-User = get_user_model()
+from accounts.models import User, Profile
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
