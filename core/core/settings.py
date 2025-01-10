@@ -167,8 +167,8 @@ SIMPLE_JWT = {
 # EMAIL_HOST = "smtp.gmail.com"  # Docker compose service name (instead of 'localhost')
 # EMAIL_PORT = 587
 # EMAIL_USE_TLS = True
-# EMAIL_HOST_USER = "alizahmaktesh0206@gmial.com"
-# EMAIL_HOST_PASSWORD = "Alizm1241"
+# EMAIL_HOST_USER = ""
+# EMAIL_HOST_PASSWORD = ""
 
 
 # SMTP service configuration for sending emails
